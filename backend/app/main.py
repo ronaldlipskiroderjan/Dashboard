@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, status 
 from fastapi.security import OAuth2PasswordRequestForm 
 from app.schemas.chamada import ChamadaResumo, ChamadaDetalhe
+from app.schemas.dashboard import DashboardResumo
 from app.core.security import (
     criar_token_acesso,
     verificar_senha,
@@ -24,8 +25,8 @@ async def root():
     }
 
 db_usuarios = {
-    "operador@cliente_a.com": {
-        "email": "operador@cliente_a.com",
+    "ronald@lipski.com": {
+        "email": "ronald@lipski.com",
         "hashed_password": "$2b$12$SfcK.Efz.a14iNUuvTCYjeVFQomEG.XazhfY2VOkqHvqxzt8ZLxXi", 
         "id_empresa": 101, 
     },
@@ -43,7 +44,7 @@ db_chamadas = [
         "data_hora": "2026-04-03T10:30:00",
         "status": "Acordo Fechado",
         "duracao_segundos": 145,
-        "id_empresa": 1
+        "id_empresa": 101
     },
     {
         "id": 2,
@@ -51,7 +52,7 @@ db_chamadas = [
         "data_hora": "2026-04-03T11:15:00",
         "status": "Promessa de Pagamento",
         "duracao_segundos": 88,
-        "id_empresa": 1
+        "id_empresa": 101
     }
 ]
 
@@ -70,7 +71,7 @@ db_detalhes_chamada = {
     }
 }
 
-# === Rota de autenticação ===
+# === Rota de Autenticação ===
 @app.post("/api/auth/login", tags=["Autenticação"])
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     
@@ -119,4 +120,23 @@ async def obter_resumo_dashboard(usuario_logado: dict = Depends(obter_usuario_at
         "empresa_operacao": id_empresa_segura,
         "usuario": usuario_logado["email"],
         "dados_simulados": f"Exibindo apenas dados da empresa {id_empresa_segura}."
+    }
+
+# === Rota de Dahboard ===
+@app.get("/api/dashboard/resumo", response_model=DashboardResumo, tags=["Dashboard"])
+async def obter_resumo_dashboard(usuario_logado: dict = Depends(obter_usuario_atual)):
+    minhas_chamadas = [c for c in db_chamadas if c["id_empresa"] == usuario_logado["id_empresa"]]
+
+    total = len(minhas_chamadas)
+
+    sucesso = len([c for c in minhas_chamadas if c["status"] in ["Acordo Fechado", "Promessa de Pagamento"]])
+
+    taxa = (sucesso / total * 100) if total > 0 else 0.0
+
+    return {
+        "total_chamadas": total,
+        "chamadas_com_sucesso": sucesso,
+        "taxa_conversao": round(taxa, 2),
+        "valor_recuperado_total": 15750.50, 
+        "id_empresa": usuario_logado["id_empresa"]
     }
