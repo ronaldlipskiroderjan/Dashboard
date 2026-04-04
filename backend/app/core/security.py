@@ -1,8 +1,9 @@
 import jwt
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Depends, HTTPException, status
+
 
 SECRET_KEY = "sua_chave_super_secreta_para_o_projeto"
 ALGORITHM = "HS256"
@@ -10,7 +11,6 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 600
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-from fastapi.security import HTTPBearer
 oauth2_scheme = HTTPBearer()
 
 def verificar_senha(senha_plana: str, senha_hash: str) -> bool:
@@ -27,10 +27,9 @@ def criar_token_acesso(data: dict) -> str:
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
-async def obter_usuario_atual(token: str = Depends(oauth2_scheme)) -> dict:
-    """
-    Extrai o usuário e a empresa do token para garantir o multi-tenant.
-    """
+async def obter_usuario_atual(auth: HTTPAuthorizationCredentials = Depends(oauth2_scheme)) -> dict:
+    token = auth.credentials
+
     credentials_excepiton = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciais inválidas ou token expirado",

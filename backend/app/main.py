@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status 
-from fastapi.security import OAuth2PasswordRequestForm    
+from fastapi.security import OAuth2PasswordRequestForm 
+from app.schemas.chamada import ChamadaResumo, ChamadaDetalhe
 from app.core.security import (
     criar_token_acesso,
     verificar_senha,
@@ -17,7 +18,7 @@ app = FastAPI(
 @app.get("/", tags=["Status"])
 async def root():
     return {
-        "sistema": "Agendai API", 
+        "sistema": "API - Painel de Cobrança", 
         "status": "online", 
         "documentacao": "/docs"
     }
@@ -32,6 +33,40 @@ db_usuarios = {
         "email": "gestor@cliente_b.com",
         "hashed_password": "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW", 
         "id_empresa": 202,
+    }
+}
+
+db_chamadas = [
+    {
+        "id": 1,
+        "telefone_cliente": "(41) 99999-0001",
+        "data_hora": "2026-04-03T10:30:00",
+        "status": "Acordo Fechado",
+        "duracao_segundos": 145,
+        "id_empresa": 1
+    },
+    {
+        "id": 2,
+        "telefone_cliente": "(11) 98888-1234",
+        "data_hora": "2026-04-03T11:15:00",
+        "status": "Promessa de Pagamento",
+        "duracao_segundos": 88,
+        "id_empresa": 1
+    }
+]
+
+db_detalhes_chamada = {
+    1: {
+        "id": 1,
+        "telefone_cliente": "(41) 99999-0001",
+        "data_hora": "2026-04-03T10:30:00",
+        "status": "Acordo Fechado",
+        "duracao_segundos": 145,
+        "id_empresa": 101,
+        "transcricao_completa": "Robô: Olá, falo com Ronald? Cliente: Sim. Robô: Identificamos um débito...",
+        "resumo_ia": "O cliente demonstrou interesse em quitar a dívida e solicitou o boleto via WhatsApp.",
+        "sentimento_cliente": "Colaborativo",
+        "audio_url": "https://meu-bucket.r2.cloudflarestorage.com/audio001.mp3"
     }
 }
 
@@ -54,12 +89,29 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     return {"access_token": access_token, "token_type": "bearer"}
 
+# === Rota de Chamadas ===
+@app.get("/api/chamadas", response_model=list[ChamadaResumo], tags=["Chamadas"])
+async def listar_chamadas(usuario_logado: dict = Depends(obter_usuario_atual)):
+    minhas_chamadas = [c for c in db_chamadas if c["id_empresa"] == usuario_logado["id_empresa"]]
+    return minhas_chamadas
+
+@app.get("/api/chamadas/{chamada_id}", response_model=ChamadaDetalhe, tags=["Chamadas"])
+async def obter_detalhe_chamada(chamada_id: int, usuario_logado: dict = Depends(obter_usuario_atual)):
+    print(f"Buscando ID: {chamada_id} para a Empresa: {usuario_logado['id_empresa']}")
+    
+    chamada = db_detalhes_chamada.get(chamada_id)
+
+    if not chamada:
+        raise HTTPException(status_code=404, detail="ID não encontrado no dicionário")
+    
+    if chamada["id_empresa"] != usuario_logado["id_empresa"]:
+        raise HTTPException(status_code=403, detail="Você não tem permissão para acessar esta chamada")
+
+    return chamada
+
 # === Rotas Protegidas ===
 @app.get("/api/dashboard", tags=["Dashboard"])
-async def obter_resumo_dashboard(usuario_logado: dict = Depends(obter_usuario_atual)):
-    """ 
-    O 'usuario_logado' é injetado automaticamente após a validação do token JWT.
-    """
+async def obter_resumo_dashboard(usuario_logado: dict = Depends(obter_usuario_atual)):  
     id_empresa_segura = usuario_logado["id_empresa"]
 
     return {
