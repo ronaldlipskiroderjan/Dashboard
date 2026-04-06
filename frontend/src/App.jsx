@@ -1,23 +1,16 @@
-import { useEffect, useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
 
 function App() {
-    const [mensagemBack, setMensagemBack] = useState("Conectado ao servidor...")
-
-    useEffect(() => {
-        fetch('http://localhost:8000/')
-            .then(resposta => resposta.json())
-            .then(dados => setMensagemBack(dados.sistema + " - " + dados.status))
-            .catch(erro => setMensagemBack("Erro ao conectar no Backend"))
-    },[])
-
-    return (
-        <div>
-            <h1>Dashboard de Cobrança</h1>
-            <p>
-                <strong>Status do Backend:</strong>{mensagemBack}
-            </p>
-        </div>
-    )
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
