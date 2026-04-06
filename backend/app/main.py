@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status 
 from fastapi.security import OAuth2PasswordRequestForm 
+from fastapi.middleware.cors import CORSMiddleware
 from app.schemas.chamada import ChamadaResumo, ChamadaDetalhe
 from app.schemas.dashboard import DashboardResumo
 from app.core.security import (
@@ -15,6 +16,14 @@ app = FastAPI(
     title = "Painel de Cobrança - API",
     description = "Backend multi-tenant para gestão de cobrança.",
     version = "1.0.0"
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/", tags=["Status"])
