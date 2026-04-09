@@ -60,14 +60,3 @@ O Painel estará rodando em http://localhost:5173
 
 🧑‍💻 Autor
 Desenvolvido por Ronald Lipski Roderjan GitHub: @ronaldlipskiroderjan
-
-
----
-
-### Dica de versionamento:
-Para mandar isso para o GitHub, você pode rodar os comandos clássicos na raiz do seu projeto:
-1. `git add README.md`
-2. `git commit -m "docs: adicionando README profissional do projeto"`
-3. `git push`
-
-Ficou com a cara de um software de ponta, não acha? Se quiser adicionar mais alguma funcionalidade ou detalhe na documentação, é só falar!
